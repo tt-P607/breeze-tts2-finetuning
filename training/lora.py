@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
+import os
 from pathlib import Path
 from typing import Any
 
@@ -184,6 +186,21 @@ def adapter_state(model: nn.Module) -> dict[str, torch.Tensor]:
     return state
 
 
+def adapter_config(model: nn.Module) -> dict[str, Any]:
+    modules = [module for module in model.modules() if isinstance(module, LoRALinear)]
+    if not modules:
+        raise RuntimeError("model has no LoRA adapter state")
+
+    ranks = {int(module.lora_A.shape[0]) for module in modules}
+    alphas = {module.alpha for module in modules}
+    if len(ranks) != 1 or len(alphas) != 1:
+        raise ValueError("all LoRA layers must share one rank and alpha")
+    rank = ranks.pop()
+    if any(module.rank != rank for module in modules):
+        raise ValueError("LoRA rank metadata does not match adapter tensor shapes")
+    return {"schema_version": 1, "lora": {"rank": rank, "alpha": alphas.pop()}}
+
+
 def tensor_sha256(tensor: torch.Tensor) -> str:
     raw = tensor.detach().cpu().contiguous().view(torch.uint8).numpy().tobytes()
     return hashlib.sha256(raw).hexdigest()
@@ -196,8 +213,16 @@ def adapter_hashes(model: nn.Module) -> dict[str, str]:
 def save_adapter(model: nn.Module, path: str | Path) -> dict[str, str]:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    config = adapter_config(model)
     state = adapter_state(model)
     save_file(state, path)
+    config_path = path.with_name("adapter_config.json")
+    partial_config = config_path.with_name(config_path.name + ".partial")
+    partial_config.write_text(
+        json.dumps(config, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    os.replace(partial_config, config_path)
     return {name: tensor_sha256(value) for name, value in state.items()}
 
 

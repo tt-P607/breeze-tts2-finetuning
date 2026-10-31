@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 import torch
@@ -76,6 +77,20 @@ def test_projection_variant_includes_all_requested_families() -> None:
     }
 
 
+def test_save_adapter_writes_rank_and_alpha_metadata(tmp_path) -> None:
+    model = ToyModel()
+    inject_lora(model, variant="backbone_only", rank=3, alpha=12.5, seed=7)
+    adapter_path = tmp_path / "adapter.safetensors"
+
+    save_adapter(model, adapter_path)
+
+    config = json.loads((tmp_path / "adapter_config.json").read_text())
+    assert config == {
+        "schema_version": 1,
+        "lora": {"rank": 3, "alpha": 12.5},
+    }
+
+
 def test_adapter_round_trip_and_merge_preserve_output(tmp_path) -> None:
     torch.manual_seed(3)
     inputs = torch.randn(2, 4)
@@ -96,6 +111,7 @@ def test_adapter_round_trip_and_merge_preserve_output(tmp_path) -> None:
 
     adapter_path = tmp_path / "adapter.safetensors"
     hashes = save_adapter(model, adapter_path)
+    (tmp_path / "adapter_config.json").unlink()
     reloaded = ToyModel()
     reloaded.load_state_dict(base_state)
     inject_lora(reloaded, variant="backbone_only", rank=2, alpha=4, seed=7)

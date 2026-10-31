@@ -26,8 +26,10 @@ statistics do not establish pleasant cadence or low listening fatigue.
 ## Blind listening
 
 `evaluation.build_blind_pack` randomizes opaque sample identifiers and writes a
-public manifest plus a mode-`0600` private key. Record all ratings before reading
-the key.
+public manifest plus a private key. On POSIX systems the key is mode `0600`.
+On Windows, `chmod` does not restrict the file's ACL, so place the key under a
+directory already restricted to the intended user or create the pack in WSL2.
+Record all ratings before reading the key.
 
 Rate at least these dimensions separately:
 

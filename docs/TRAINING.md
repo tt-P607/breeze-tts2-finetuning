@@ -17,6 +17,20 @@ depth decoder, and the text, depth-input, and output projections. Full SFT train
 the released synthesis parameters while keeping those same two components
 frozen.
 
+## Windows support
+
+The documented training environment is Linux with Python 3.11 and a CUDA GPU.
+The scripts in `scripts/` are Bash wrappers, so run them in Linux or WSL2. The
+Python modules also provide command-line entry points, but native Windows CUDA
+training, BF16 model loading, checkpoint resume, and end-to-end output have not
+been qualified. Windows unit tests use small synthetic models and do not prove
+those GPU paths.
+
+On Windows, Python's `chmod(0o600)` does not create a user-only file ACL. Keep
+blind-listening keys in a directory whose Windows permissions are already
+restricted to the intended user, or build the pack in WSL2 where the documented
+POSIX mode applies. See [the evaluation guide](EVALUATION.md#blind-listening).
+
 ## Admission sequence
 
 Use these gates in order:
@@ -45,6 +59,25 @@ After validation selection, `training.real_lora_verify` reloads the adapter in a
 fresh process, evaluates held-out examples, merges the adapted linear layers,
 and exports a separate merged package. `training.real_lora_merged_smoke` then
 reloads that package independently.
+
+## Export to a C++ runtime
+
+Training checkpoints and inference files use different formats. A LoRA
+checkpoint stores `adapter.safetensors` as paired `.lora_A` and `.lora_B`
+tensors. Saving an adapter also writes an adjacent `adapter_config.json` with
+`lora.rank` and `lora.alpha`, matching the release bundle format. The C++
+runtime uses GGUF, so convert the adapter with the matching C++ project's
+`scripts/convert_lora_to_gguf.py`; it reads only this adjacent configuration.
+Older checkpoints without that file require an explicit `--alpha`. The GGUF
+adapter stores the scale `alpha / rank` and defaults to F16 factors. Load it
+only with a GGUF base converted from the same Breeze model revision.
+
+For full SFT or a merged LoRA model, use the fresh-process inference export,
+which contains the Hugging Face `config.json`, safetensors index and shards,
+tokenizer, and `audio_tokenizer/`. Convert that directory with the C++
+project's `scripts/convert_hf_to_gguf.py`; quantization is a separate step in
+the C++ project. This toolkit does not write GGUF files, and raw safetensors
+are not a C++ runtime model by themselves.
 
 ## Full-SFT lifecycle
 

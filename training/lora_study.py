@@ -105,8 +105,9 @@ def main() -> int:
     if args.steps <= 0 or args.learning_rate <= 0:
         raise ValueError("steps and learning rate must be positive")
     adapter_path = args.output_root / "adapter.safetensors"
+    adapter_config_path = args.output_root / "adapter_config.json"
     receipt_path = args.output_root / "receipt.json"
-    for path in (adapter_path, receipt_path):
+    for path in (adapter_path, adapter_config_path, receipt_path):
         if path.exists():
             raise FileExistsError(f"refusing to overwrite existing artifact: {path}")
     args.output_root.mkdir(parents=True, exist_ok=True)

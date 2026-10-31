@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import stat
 import wave
 from pathlib import Path
@@ -45,4 +46,5 @@ def test_builds_opaque_pack_and_private_mode(tmp_path: Path, monkeypatch) -> Non
     assert len(public["samples"]) == 2
     assert all("model_id" not in row for row in public["samples"])
     assert {row["model_id"] for row in private["samples"]} == {"base", "adapted"}
-    assert stat.S_IMODE((output / "private-key.json").stat().st_mode) == 0o600
+    if os.name == "posix":
+        assert stat.S_IMODE((output / "private-key.json").stat().st_mode) == 0o600
