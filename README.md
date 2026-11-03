@@ -9,6 +9,19 @@ checkpoints, training audio, or generated speech.
 
 Instavar is not affiliated with or endorsed by BreezeBlue or RESONIA, INC.
 
+## Local training WebUI
+
+This fork includes a local Gradio LoRA training UI: dataset import and audition,
+immutable batch preparation, preprocessing, training, live losses, checkpoint
+resume, and LoRA GGUF export. It uses the same `python -m training.workflow.cli`
+entry point as the command line. Opening the UI does not load a model or start
+training. On the existing Windows workspace, run `start_webui.bat`; otherwise
+install `requirements-webui.txt` into your training environment and run
+`python webui.py --workspace-root <workspace>`. It listens on `127.0.0.1:7862`.
+
+See [中文使用说明](docs/webui-zh.md) for data formats, shared-resource paths,
+250-step / 25-step-save defaults, safe pause, resume limits, and export.
+
 ## Published research derivatives
 
 - [Instavar SG Narration LoRA R8](https://huggingface.co/instavar/sg-narration-lora-r8)

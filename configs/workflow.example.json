@@ -1,0 +1,37 @@
+{
+  "prepare": {
+    "train-manifest": "数据集/新角色/训练批次/20261104_新批次/train.jsonl",
+    "validation-manifest": "数据集/新角色/训练批次/20261104_新批次/validation.jsonl",
+    "output-root": "数据集/新角色/训练批次/20261104_新批次/cache",
+    "train-limit": 250,
+    "validation-limit": 32,
+    "seed": 42,
+    "speaker": "S0",
+    "device": "cuda:0"
+  },
+  "train": {
+    "cache-root": "数据集/新角色/训练批次/20261104_新批次/cache",
+    "output-root": "数据集/新角色/训练批次/20261104_新批次/检查点",
+    "device": "cuda:0",
+    "rank": 16,
+    "alpha": 32,
+    "max-steps": 300,
+    "stop-after-step": 250,
+    "gradient-accumulation": 4,
+    "learning-rate": 0.0001,
+    "weight-decay": 0.01,
+    "warmup-steps": 100,
+    "save-every": 25,
+    "validation-examples": 32,
+    "seed": 42,
+    "max-gradient-norm": 1.0
+  },
+  "notes": [
+    "max-steps 是学习率调度总步数；stop-after-step 是本次运行停点。"
+  ],
+  "export": {
+    "checkpoint": "数据集/新角色/训练批次/20261104_新批次/检查点/checkpoint-step-000250",
+    "output": "数据集/新角色/训练批次/20261104_新批次/推理模型/新角色_250步.gguf",
+    "alpha": 32
+  }
+}

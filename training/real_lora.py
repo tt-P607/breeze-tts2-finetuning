@@ -379,11 +379,16 @@ def main() -> int:
             "gradient_norm_before_clip": gradient_norm,
             "training_loss": accumulated,
         }
+        print(json.dumps({"event": "training_step", **row}), flush=True)
 
         should_save = (
             global_step % args.save_every == 0 or global_step == args.max_steps
         )
-        should_pause = args.stop_after_step == global_step or _STOP_REQUESTED
+        stop_file = args.output_root.with_name(args.output_root.name + ".stop-request")
+        user_stop = stop_file.exists()
+        should_pause = (
+            args.stop_after_step == global_step or _STOP_REQUESTED or user_stop
+        )
         if should_save or should_pause:
             row["validation_loss"] = validate(
                 model,
@@ -399,6 +404,9 @@ def main() -> int:
             state = {
                 "schema_version": 1,
                 "status": status,
+                "pause_reason": "user_stop"
+                if user_stop
+                else ("configured_limit" if should_pause else None),
                 "global_step": global_step,
                 "micro_step": micro_step,
                 "initial_validation": initial_validation,
@@ -428,6 +436,8 @@ def main() -> int:
                 scheduler=scheduler,
                 state=state,
             )
+            if user_stop:
+                stop_file.unlink(missing_ok=True)
             print(
                 json.dumps(
                     {

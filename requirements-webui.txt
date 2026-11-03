@@ -1,0 +1,4 @@
+-r requirements.txt
+gradio>=6.17,<7
+pandas>=2
+psutil>=5.9
